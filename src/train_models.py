@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -339,5 +339,25 @@ if hasattr(best_model.named_steps['classifier'], 'feature_importances_'):
     plt.savefig(feature_importance_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"✅ Feature importance plot saved at: {feature_importance_path}")
+
+# -------------------------------
+# Confusion Matrix for Best Model
+# -------------------------------
+print("\nGenerating Confusion Matrix for the best model...")
+y_pred_best = best_model.predict(X_test)
+cm = confusion_matrix(y_test, y_pred_best)
+
+plt.figure(figsize=(10, 8))
+# Get unique class labels from the data for the display labels
+unique_labels = sorted(list(set(y)))
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=unique_labels)
+disp.plot(cmap=plt.cm.Blues, values_format='d', xticks_rotation='vertical')
+plt.title(f'Confusion Matrix - {best_model_name}')
+plt.tight_layout()
+
+cm_plot_path = os.path.join(plots_dir, "confusion_matrix.png")
+plt.savefig(cm_plot_path, dpi=300, bbox_inches='tight')
+plt.close()
+print(f"✅ Confusion Matrix plot saved at: {cm_plot_path}")
 
 print("\n🎉 Training completed successfully!")
