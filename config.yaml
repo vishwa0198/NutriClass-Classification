@@ -1,15 +1,21 @@
 data:
   raw_path: r"C:\Guvi\NutriClass Food Classification Using Nutritional Data\data\raw\synthetic_food_dataset_imbalanced.csv"
-  processed_path: "data/processed/food_data_final.csv"
+  processed_path: "data/processed/food_data_clean.csv"
+  final_path: "data/processed/food_data_final.csv"
 
 model:
-  save_path: "models/random_forest.pkl"
+  save_path: "models/model.pkl"
 
 features:
   - Calories
-  - Proteins
+  - Protein
+  - Fat
   - Carbs
-  - Fats
   - Sugar
+  - Fiber
+  - Sodium
+  - Cholesterol
+  - Glycemic_Index
+  - Water_Content
 
-target: "FoodCategory"
+target: "Food_Name"

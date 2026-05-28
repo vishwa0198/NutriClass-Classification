@@ -4,7 +4,7 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, StratifiedKFold
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -35,7 +35,7 @@ df = pd.read_csv(data_path)
 feature_cols = ['Calories', 'Protein', 'Fat', 'Carbs', 'Sugar', 'Fiber', 
                 'Sodium', 'Cholesterol', 'Glycemic_Index', 'Water_Content']
 X = df[feature_cols]
-y = df['Meal_Type_encoded']
+y = df['Food_Name_encoded']
 
 print(f"Dataset shape: {X.shape}")
 print(f"Number of classes: {len(np.unique(y))}")
@@ -57,9 +57,8 @@ models = {
             max_iter=1000,
             random_state=42,
             C=1.0,
-            solver='liblinear',
-            penalty='l2',
-            multi_class='ovr'
+            solver='lbfgs',
+            penalty='l2'
         ))
     ]),
     
@@ -119,7 +118,6 @@ models = {
     "XGBoost": Pipeline([
         ('imputer', SimpleImputer(strategy='mean')),
         ('classifier', xgb.XGBClassifier(
-            use_label_encoder=False,
             eval_metric='mlogloss',
             random_state=42,
             n_estimators=200,
@@ -210,6 +208,8 @@ print("\n" + "="*60)
 print("TRAINING AND EVALUATING MODELS")
 print("="*60)
 
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
 for name, model in models.items():
     print(f"\n🔄 Training {name}...")
     print("-" * 40)
@@ -225,8 +225,14 @@ for name, model in models.items():
     test_acc = accuracy_score(y_test, y_pred)
     train_acc = accuracy_score(y_train, y_train_pred)
     
+    # Cross-validation
+    cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring='accuracy', n_jobs=-1)
+    cv_mean = cv_scores.mean()
+    cv_std = cv_scores.std()
+    
     print(f"Training Accuracy: {train_acc:.4f}")
     print(f"Testing Accuracy: {test_acc:.4f}")
+    print(f"Cross-Validation (5-fold): {cv_mean:.4f} ± {cv_std:.4f}")
     print(f"Overfitting Check: {train_acc - test_acc:.4f}")
     
     # Detailed classification report
@@ -239,6 +245,8 @@ for name, model in models.items():
         'train_acc': train_acc,
         'test_acc': test_acc,
         'overfitting': train_acc - test_acc,
+        'cv_mean': cv_mean,
+        'cv_std': cv_std,
         'model': model
     }
     
@@ -268,10 +276,10 @@ print(f"💾 Model saved at: {best_model_path}")
 # Print summary table
 print("\n📊 MODEL COMPARISON SUMMARY:")
 print("-" * 70)
-print(f"{'Model':<25} {'Train Acc':<12} {'Test Acc':<12} {'Overfitting':<12}")
-print("-" * 70)
+print(f"{'Model':<25} {'Train Acc':<12} {'Test Acc':<12} {'CV Mean':<12} {'CV Std':<10} {'Overfit':<10}")
+print("-" * 85)
 for name, details in detailed_results.items():
-    print(f"{name:<25} {details['train_acc']:<12.4f} {details['test_acc']:<12.4f} {details['overfitting']:<12.4f}")
+    print(f"{name:<25} {details['train_acc']:<12.4f} {details['test_acc']:<12.4f} {details['cv_mean']:<12.4f} {details['cv_std']:<10.4f} {details['overfitting']:<10.4f}")
 
 # -------------------------------
 # Create and save visualizations
@@ -349,7 +357,8 @@ cm = confusion_matrix(y_test, y_pred_best)
 
 plt.figure(figsize=(10, 8))
 # Get unique class labels from the data for the display labels
-unique_labels = sorted(list(set(y)))
+le = joblib.load(os.path.join(models_dir, "label_encoder.pkl"))
+unique_labels = le.classes_
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=unique_labels)
 disp.plot(cmap=plt.cm.Blues, values_format='d', xticks_rotation='vertical')
 plt.title(f'Confusion Matrix - {best_model_name}')

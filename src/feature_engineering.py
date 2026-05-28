@@ -3,11 +3,11 @@ from sklearn.preprocessing import LabelEncoder
 import joblib
 import os
 
-# Load processed data
-df = pd.read_csv(r"C:\Guvi\NutriClass Food Classification Using Nutritional Data\data\raw\synthetic_food_dataset_imbalanced.csv")
+# Load preprocessed (cleaned + normalized) data
+df = pd.read_csv(r"C:\Guvi\NutriClass Food Classification Using Nutritional Data\data\processed\food_data_clean.csv")
 
-# Encode target column
-target_col = 'Meal_Type'
+# Encode target column: Food_Name is the classification target per project requirements
+target_col = 'Food_Name'
 le = LabelEncoder()
 df[target_col + '_encoded'] = le.fit_transform(df[target_col])
 

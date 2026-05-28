@@ -52,7 +52,7 @@ df = pd.read_csv(data_path)
 feature_cols = ['Calories', 'Protein', 'Fat', 'Carbs', 'Sugar', 'Fiber', 
                 'Sodium', 'Cholesterol', 'Glycemic_Index', 'Water_Content']
 X = df[feature_cols]
-y = df['Meal_Type_encoded']
+y = df['Food_Name_encoded']
 
 print(f"📊 Dataset loaded: {X.shape[0]} samples, {X.shape[1]} features")
 print(f"🎯 Number of classes: {len(np.unique(y))}")
